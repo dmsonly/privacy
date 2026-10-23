@@ -393,32 +393,24 @@
         return top + fade(yf) * (bottom - top);
       }
 
-      // The field is drawn at ~140 cells on the long side and upscaled by CSS, which keeps it cheap.
-      const CELLS = 140;
-      const UNIT = 2.4 / CELLS;
-      const WIND_X = 0.0339;
-      const WIND_Y = 0.0102;
-      const COVER = 0.55;
-      const LIGHT = [128, 168, 228];
-      const SHADOW = [28, 52, 104];
-      let cols = 0;
-      let rows = 0;
-      let image = null;
-      let field = null;
-
-      // Every octave drifts with the same wind; finer ones run slightly ahead so edges change shape slowly.
-      function fbm(x, y, t) {
+      function fbm(x, y) {
         let sum = 0;
         let amp = 0.5;
-        let freq = 1;
         for (let o = 0; o < 4; o++) {
-          const drift = t * (1 + 0.15 * o);
-          sum += amp * noise((x + drift * WIND_X) * freq + o * 17.3, (y + drift * WIND_Y) * freq);
-          freq *= 2;
-          amp *= 0.45;
+          sum += amp * noise(x, y);
+          x *= 2;
+          y *= 2;
+          amp *= 0.5;
         }
         return sum;
       }
+
+      // The field is drawn at ~80 cells on the long side and upscaled by CSS, which keeps it cheap and soft.
+      const CELLS = 80;
+      const UNIT = 3 / CELLS;
+      let cols = 0;
+      let rows = 0;
+      let image = null;
 
       function resize() {
         const w = Math.max(1, bg.clientWidth);
@@ -430,28 +422,24 @@
         cols = soft.width = dots.width = nextCols;
         rows = soft.height = dots.height = nextRows;
         image = softCtx.createImageData(cols, rows);
-        field = new Float32Array(cols * rows);
       }
 
       function draw(t) {
-        for (let j = 0, k = 0; j < rows; j++) {
-          for (let i = 0; i < cols; i++, k++) {
-            field[k] = fbm(i * UNIT, j * UNIT, t);
-          }
-        }
         const data = image.data;
-        for (let j = 0, k = 0; j < rows; j++) {
-          for (let i = 0; i < cols; i++, k++) {
-            const cover = field[k] + 0.5 - COVER;
-            const d = cover > 0 ? 1 - Math.exp(-cover * 18) : 0;
-            // Lit where the cloud thins toward a top-left light, shadowed underneath, so puffs read as solid.
-            const towardLight = field[Math.max(0, j - 2) * cols + Math.max(0, i - 2)];
-            const shade = Math.min(1, Math.max(0, 0.45 + (field[k] - towardLight) * 9));
-            const p = k * 4;
-            data[p] = SHADOW[0] + (LIGHT[0] - SHADOW[0]) * shade;
-            data[p + 1] = SHADOW[1] + (LIGHT[1] - SHADOW[1]) * shade;
-            data[p + 2] = SHADOW[2] + (LIGHT[2] - SHADOW[2]) * shade;
-            data[p + 3] = 255 * d;
+        let k = 0;
+        for (let j = 0; j < rows; j++) {
+          const y = j * UNIT;
+          for (let i = 0; i < cols; i++) {
+            const x = i * UNIT;
+            const n =
+              0.65 * fbm(x + t * 0.0424, y + t * 0.0127) +
+              0.35 * fbm(x * 1.7 - t * 0.0265 + 31.4, y * 1.7 + t * 0.0191 + 17.2);
+            let d = (n + 0.05) / 0.45;
+            d = d <= 0 ? 0 : d >= 1 ? 1 : d * d * (3 - 2 * d);
+            data[k++] = 22 + 64 * d;
+            data[k++] = 50 + 81 * d;
+            data[k++] = 108 + 95 * d;
+            data[k++] = 255 * d;
           }
         }
         softCtx.putImageData(image, 0, 0);
