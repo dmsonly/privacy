@@ -3,26 +3,19 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="color-scheme" content="light dark">
+  <meta name="color-scheme" content="dark">
   <meta name="description" content="DMs Only Android Privacy Policy">
   <title>DMs Only Android Privacy Policy</title>
   <style>
     :root {
-      --bg: #ffffff;
-      --text: #1f2328;
-      --muted: #59636e;
-      --border: #d1d9e0;
-      --link: #0969da;
-    }
-
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --bg: #0d1117;
-        --text: #e6edf3;
-        --muted: #9198a1;
-        --border: #3d444d;
-        --link: #4493f8;
-      }
+      color-scheme: dark;
+      --bg: #0b1733;
+      --text: #eaf1ff;
+      --muted: #a9bad9;
+      --border: rgba(234, 241, 255, 0.16);
+      --link: #9cc4ff;
+      --sparkle-fill: #e4efff;
+      --sparkle-stroke: #7fb0f2;
     }
 
     *,
@@ -32,6 +25,7 @@
     }
 
     html {
+      background: var(--bg);
       -webkit-text-size-adjust: 100%;
       text-size-adjust: 100%;
     }
@@ -45,7 +39,110 @@
       line-height: 1.65;
     }
 
+    .bg {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100vh;
+      height: 100lvh;
+      overflow: hidden;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .bg-glow {
+      position: absolute;
+      inset: -20%;
+      background:
+        radial-gradient(ellipse 45% 35% at 70% 30%, #23498f, transparent 70%),
+        radial-gradient(ellipse 40% 45% at 20% 75%, #1c3c7a, transparent 70%),
+        radial-gradient(ellipse 35% 30% at 85% 85%, #1a3670, transparent 70%);
+      animation: glow-drift 26s ease-in-out infinite alternate;
+    }
+
+    /* Clouds seen through a dot grid give the halftone look. */
+    .bg-dots {
+      position: absolute;
+      inset: -15%;
+      background:
+        radial-gradient(ellipse 40% 30% at 65% 35%, #5e9df2, transparent 70%),
+        radial-gradient(ellipse 35% 40% at 18% 68%, #86b8fb, transparent 65%),
+        radial-gradient(ellipse 30% 25% at 40% 10%, #4a86df, transparent 70%),
+        radial-gradient(ellipse 30% 30% at 88% 80%, #6aa6f5, transparent 70%);
+      opacity: 0.7;
+      -webkit-mask-image: radial-gradient(circle, #000 1px, transparent 1.6px);
+      mask-image: radial-gradient(circle, #000 1px, transparent 1.6px);
+      -webkit-mask-size: 4px 4px;
+      mask-size: 4px 4px;
+      animation: dots-drift 18s ease-in-out infinite alternate;
+    }
+
+    .bg-veil {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(11, 23, 51, 0.55), rgba(11, 23, 51, 0.2) 50%, rgba(11, 23, 51, 0.65));
+    }
+
+    .sparkle {
+      position: absolute;
+      fill: var(--sparkle-fill);
+      stroke: var(--sparkle-stroke);
+      stroke-width: 1.2;
+      filter: drop-shadow(0 0 4px rgba(111, 164, 238, 0.6));
+      animation: twinkle var(--duration, 6s) ease-in-out var(--delay, 0s) infinite;
+    }
+
+    .bg-defs {
+      position: absolute;
+      width: 0;
+      height: 0;
+    }
+
+    @keyframes glow-drift {
+      from {
+        transform: translate(-4%, 3%) scale(1.05);
+      }
+
+      to {
+        transform: translate(4%, -3%) scale(1.15);
+      }
+    }
+
+    @keyframes dots-drift {
+      from {
+        transform: translate(3%, -2%) scale(1);
+      }
+
+      to {
+        transform: translate(-3%, 2%) scale(1.1);
+      }
+    }
+
+    @keyframes twinkle {
+      0%,
+      100% {
+        opacity: 0.3;
+        transform: scale(0.8);
+      }
+
+      50% {
+        opacity: 0.95;
+        transform: scale(1.1);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .bg-glow,
+      .bg-dots,
+      .sparkle {
+        animation: none;
+      }
+    }
+
     main {
+      position: relative;
+      z-index: 1;
       max-width: 44rem;
       margin: 0 auto;
       padding: 3.5rem 1.5rem 4rem;
@@ -118,9 +215,23 @@
     }
 
     @media print {
+      html,
       body {
         background: none;
         color: #000;
+      }
+
+      .bg {
+        display: none;
+      }
+
+      header {
+        border-color: #ccc;
+      }
+
+      .kicker,
+      .updated {
+        color: #444;
       }
 
       a {
@@ -130,6 +241,29 @@
   </style>
 </head>
 <body>
+  <div class="bg" aria-hidden="true">
+    <svg class="bg-defs" focusable="false">
+      <symbol id="sparkle" viewBox="0 0 24 24">
+        <path d="M12 1c.9 5.8 4.2 9.1 11 11-6.8 1.9-10.1 5.2-11 11-.9-5.8-4.2-9.1-11-11 6.8-1.9 10.1-5.2 11-11z"/>
+      </symbol>
+    </svg>
+    <div class="bg-glow"></div>
+    <div class="bg-dots"></div>
+    <div class="bg-veil"></div>
+    <svg class="sparkle" viewBox="0 0 24 24" style="left:5%;top:14%;width:14px;height:14px;--delay:0s;--duration:6s"><use href="#sparkle"/></svg>
+    <svg class="sparkle" viewBox="0 0 24 24" style="left:18%;top:6%;width:10px;height:10px;--delay:-1.2s;--duration:7s"><use href="#sparkle"/></svg>
+    <svg class="sparkle" viewBox="0 0 24 24" style="left:48%;top:4%;width:9px;height:9px;--delay:-4.8s;--duration:8s"><use href="#sparkle"/></svg>
+    <svg class="sparkle" viewBox="0 0 24 24" style="left:92%;top:9%;width:16px;height:16px;--delay:-2.4s;--duration:5s"><use href="#sparkle"/></svg>
+    <svg class="sparkle" viewBox="0 0 24 24" style="left:78%;top:22%;width:11px;height:11px;--delay:-0.6s;--duration:8s"><use href="#sparkle"/></svg>
+    <svg class="sparkle" viewBox="0 0 24 24" style="left:3%;top:46%;width:12px;height:12px;--delay:-3s;--duration:7s"><use href="#sparkle"/></svg>
+    <svg class="sparkle" viewBox="0 0 24 24" style="left:95%;top:44%;width:13px;height:13px;--delay:-1.8s;--duration:6s"><use href="#sparkle"/></svg>
+    <svg class="sparkle" viewBox="0 0 24 24" style="left:58%;top:56%;width:9px;height:9px;--delay:-1s;--duration:6s"><use href="#sparkle"/></svg>
+    <svg class="sparkle" viewBox="0 0 24 24" style="left:10%;top:78%;width:15px;height:15px;--delay:-4.2s;--duration:8s"><use href="#sparkle"/></svg>
+    <svg class="sparkle" viewBox="0 0 24 24" style="left:88%;top:72%;width:10px;height:10px;--delay:-2.8s;--duration:5s"><use href="#sparkle"/></svg>
+    <svg class="sparkle" viewBox="0 0 24 24" style="left:30%;top:92%;width:12px;height:12px;--delay:-5s;--duration:7s"><use href="#sparkle"/></svg>
+    <svg class="sparkle" viewBox="0 0 24 24" style="left:66%;top:90%;width:14px;height:14px;--delay:-3.6s;--duration:6s"><use href="#sparkle"/></svg>
+  </div>
+
   <main>
     <header>
       <p class="kicker">DMs Only privacy information</p>
