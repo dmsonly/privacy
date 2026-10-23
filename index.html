@@ -12,7 +12,7 @@
   <style>
     :root {
       color-scheme: dark;
-      --bg: #0b1733;
+      --bg: #0a152e;
       --text: #eaf1ff;
       --muted: #a9bad9;
       --border: rgba(234, 241, 255, 0.16);
@@ -58,10 +58,10 @@
       position: absolute;
       inset: -20%;
       background:
-        radial-gradient(ellipse 45% 35% at 70% 30%, #23498f, transparent 70%),
-        radial-gradient(ellipse 40% 45% at 20% 75%, #1c3c7a, transparent 70%),
-        radial-gradient(ellipse 35% 30% at 85% 85%, #1a3670, transparent 70%);
-      animation: glow-drift 26s ease-in-out infinite alternate;
+        radial-gradient(ellipse 45% 35% at 70% 30%, #204281, transparent 70%),
+        radial-gradient(ellipse 40% 45% at 20% 75%, #19366e, transparent 70%),
+        radial-gradient(ellipse 35% 30% at 85% 85%, #173165, transparent 70%);
+      animation: glow-drift 24.5s ease-in-out infinite alternate;
     }
 
     /* Clouds seen through a dot grid give the halftone look. */
@@ -76,12 +76,12 @@
       position: absolute;
       inset: -15%;
       background:
-        radial-gradient(ellipse 40% 30% at 65% 35%, #5e9df2, transparent 70%),
-        radial-gradient(ellipse 35% 40% at 18% 68%, #86b8fb, transparent 65%),
-        radial-gradient(ellipse 30% 25% at 40% 10%, #4a86df, transparent 70%),
-        radial-gradient(ellipse 30% 30% at 88% 80%, #6aa6f5, transparent 70%);
+        radial-gradient(ellipse 40% 30% at 65% 35%, #558dda, transparent 70%),
+        radial-gradient(ellipse 35% 40% at 18% 68%, #79a6e2, transparent 65%),
+        radial-gradient(ellipse 30% 25% at 40% 10%, #4379c9, transparent 70%),
+        radial-gradient(ellipse 30% 30% at 88% 80%, #5f95dd, transparent 70%);
       opacity: 0.7;
-      animation: dots-drift 18s ease-in-out infinite alternate;
+      animation: dots-drift 17s ease-in-out infinite alternate;
     }
 
     .bg.is-live .bg-dots {
@@ -107,7 +107,7 @@
     .bg-veil {
       position: absolute;
       inset: 0;
-      background: linear-gradient(180deg, rgba(11, 23, 51, 0.55), rgba(11, 23, 51, 0.35) 50%, rgba(11, 23, 51, 0.65));
+      background: linear-gradient(180deg, rgba(10, 21, 46, 0.55), rgba(10, 21, 46, 0.35) 50%, rgba(10, 21, 46, 0.65));
     }
 
     .sparkle {
@@ -432,13 +432,13 @@
           for (let i = 0; i < cols; i++) {
             const x = i * UNIT;
             const n =
-              0.65 * fbm(x + t * 0.04, y + t * 0.012) +
-              0.35 * fbm(x * 1.7 - t * 0.025 + 31.4, y * 1.7 + t * 0.018 + 17.2);
+              0.65 * fbm(x + t * 0.0424, y + t * 0.0127) +
+              0.35 * fbm(x * 1.7 - t * 0.0265 + 31.4, y * 1.7 + t * 0.0191 + 17.2);
             let d = (n + 0.05) / 0.45;
             d = d <= 0 ? 0 : d >= 1 ? 1 : d * d * (3 - 2 * d);
-            data[k++] = 24 + 72 * d;
-            data[k++] = 56 + 89 * d;
-            data[k++] = 120 + 105 * d;
+            data[k++] = 22 + 64 * d;
+            data[k++] = 50 + 81 * d;
+            data[k++] = 108 + 95 * d;
             data[k++] = 255 * d;
           }
         }
