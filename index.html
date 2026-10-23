@@ -65,6 +65,13 @@
     }
 
     /* Clouds seen through a dot grid give the halftone look. */
+    .halftone {
+      -webkit-mask-image: radial-gradient(circle, #000 1px, transparent 1.6px);
+      mask-image: radial-gradient(circle, #000 1px, transparent 1.6px);
+      -webkit-mask-size: 4px 4px;
+      mask-size: 4px 4px;
+    }
+
     .bg-dots {
       position: absolute;
       inset: -15%;
@@ -74,17 +81,33 @@
         radial-gradient(ellipse 30% 25% at 40% 10%, #4a86df, transparent 70%),
         radial-gradient(ellipse 30% 30% at 88% 80%, #6aa6f5, transparent 70%);
       opacity: 0.7;
-      -webkit-mask-image: radial-gradient(circle, #000 1px, transparent 1.6px);
-      mask-image: radial-gradient(circle, #000 1px, transparent 1.6px);
-      -webkit-mask-size: 4px 4px;
-      mask-size: 4px 4px;
       animation: dots-drift 18s ease-in-out infinite alternate;
+    }
+
+    .bg.is-live .bg-dots {
+      display: none;
+    }
+
+    .bg-clouds,
+    .bg-cloud-dots {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    .bg-clouds {
+      opacity: 0.4;
+    }
+
+    .bg-cloud-dots {
+      opacity: 0.9;
     }
 
     .bg-veil {
       position: absolute;
       inset: 0;
-      background: linear-gradient(180deg, rgba(11, 23, 51, 0.55), rgba(11, 23, 51, 0.2) 50%, rgba(11, 23, 51, 0.65));
+      background: linear-gradient(180deg, rgba(11, 23, 51, 0.55), rgba(11, 23, 51, 0.35) 50%, rgba(11, 23, 51, 0.65));
     }
 
     .sparkle {
@@ -146,7 +169,7 @@
     main {
       position: relative;
       z-index: 1;
-      max-width: 44rem;
+      max-width: 50.6rem;
       margin: 0 auto;
       padding: 3.5rem 1.5rem 4rem;
     }
@@ -251,7 +274,9 @@
       </symbol>
     </svg>
     <div class="bg-glow"></div>
-    <div class="bg-dots"></div>
+    <div class="bg-dots halftone"></div>
+    <canvas class="bg-clouds"></canvas>
+    <canvas class="bg-cloud-dots halftone"></canvas>
     <div class="bg-veil"></div>
     <svg class="sparkle" viewBox="0 0 24 24" style="left:5%;top:14%;width:14px;height:14px;--delay:0s;--duration:6s"><use href="#sparkle"/></svg>
     <svg class="sparkle" viewBox="0 0 24 24" style="left:18%;top:6%;width:10px;height:10px;--delay:-1.2s;--duration:7s"><use href="#sparkle"/></svg>
@@ -328,5 +353,133 @@
       <p>DMs Only is not intended for children under 13. You must meet Instagram's minimum age requirement in your country. We may update this policy when the Android app's data handling changes; the effective date above identifies the latest revision.</p>
     </section>
   </main>
+
+  <script>
+    (() => {
+      const bg = document.querySelector(".bg");
+      const soft = bg.querySelector(".bg-clouds");
+      const dots = bg.querySelector(".bg-cloud-dots");
+      const softCtx = soft.getContext("2d");
+      const dotsCtx = dots.getContext("2d");
+      if (!softCtx || !dotsCtx) return;
+
+      const perm = new Uint8Array(512);
+      const p = Array.from({ length: 256 }, (_, i) => i);
+      let seed = 7;
+      for (let i = 255; i > 0; i--) {
+        seed = (seed * 16807) % 2147483647;
+        const j = seed % (i + 1);
+        [p[i], p[j]] = [p[j], p[i]];
+      }
+      for (let i = 0; i < 512; i++) perm[i] = p[i & 255];
+
+      const fade = (t) => t * t * t * (t * (t * 6 - 15) + 10);
+      const grad = (h, x, y) => (h & 1 ? -x : x) + (h & 2 ? -y : y);
+
+      function noise(x, y) {
+        const xi = Math.floor(x);
+        const yi = Math.floor(y);
+        const xf = x - xi;
+        const yf = y - yi;
+        const X = xi & 255;
+        const Y = yi & 255;
+        const u = fade(xf);
+        const aa = grad(perm[perm[X] + Y], xf, yf);
+        const ba = grad(perm[perm[X + 1] + Y], xf - 1, yf);
+        const ab = grad(perm[perm[X] + Y + 1], xf, yf - 1);
+        const bb = grad(perm[perm[X + 1] + Y + 1], xf - 1, yf - 1);
+        const top = aa + u * (ba - aa);
+        const bottom = ab + u * (bb - ab);
+        return top + fade(yf) * (bottom - top);
+      }
+
+      function fbm(x, y) {
+        let sum = 0;
+        let amp = 0.5;
+        for (let o = 0; o < 4; o++) {
+          sum += amp * noise(x, y);
+          x *= 2;
+          y *= 2;
+          amp *= 0.5;
+        }
+        return sum;
+      }
+
+      // The field is drawn at ~80 cells on the long side and upscaled by CSS, which keeps it cheap and soft.
+      const CELLS = 80;
+      const UNIT = 3 / CELLS;
+      let cols = 0;
+      let rows = 0;
+      let image = null;
+
+      function resize() {
+        const w = Math.max(1, bg.clientWidth);
+        const h = Math.max(1, bg.clientHeight);
+        const scale = CELLS / Math.max(w, h);
+        const nextCols = Math.max(2, Math.round(w * scale));
+        const nextRows = Math.max(2, Math.round(h * scale));
+        if (nextCols === cols && nextRows === rows) return;
+        cols = soft.width = dots.width = nextCols;
+        rows = soft.height = dots.height = nextRows;
+        image = softCtx.createImageData(cols, rows);
+      }
+
+      function draw(t) {
+        const data = image.data;
+        let k = 0;
+        for (let j = 0; j < rows; j++) {
+          const y = j * UNIT;
+          for (let i = 0; i < cols; i++) {
+            const x = i * UNIT;
+            const n =
+              0.65 * fbm(x + t * 0.04, y + t * 0.012) +
+              0.35 * fbm(x * 1.7 - t * 0.025 + 31.4, y * 1.7 + t * 0.018 + 17.2);
+            let d = (n + 0.05) / 0.45;
+            d = d <= 0 ? 0 : d >= 1 ? 1 : d * d * (3 - 2 * d);
+            data[k++] = 24 + 72 * d;
+            data[k++] = 56 + 89 * d;
+            data[k++] = 120 + 105 * d;
+            data[k++] = 255 * d;
+          }
+        }
+        softCtx.putImageData(image, 0, 0);
+        dotsCtx.clearRect(0, 0, cols, rows);
+        dotsCtx.drawImage(soft, 0, 0);
+      }
+
+      const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)");
+      let running = false;
+      let last = 0;
+
+      function tick(now) {
+        if (reduceMotion.matches) {
+          running = false;
+          return;
+        }
+        if (now - last >= 40) {
+          last = now;
+          draw(now / 1000);
+        }
+        requestAnimationFrame(tick);
+      }
+
+      function start() {
+        if (running || reduceMotion.matches) return;
+        running = true;
+        requestAnimationFrame(tick);
+      }
+
+      resize();
+      draw(performance.now() / 1000);
+      bg.classList.add("is-live");
+      start();
+
+      reduceMotion.addEventListener("change", start);
+      addEventListener("resize", () => {
+        resize();
+        draw(performance.now() / 1000);
+      });
+    })();
+  </script>
 </body>
 </html>
