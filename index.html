@@ -52,6 +52,7 @@
       overflow: hidden;
       pointer-events: none;
       z-index: 0;
+      contain: strict;
     }
 
     .bg-glow {
@@ -450,15 +451,28 @@
       const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)");
       let running = false;
       let last = 0;
+      let prev = 0;
+      let clock = 0;
+      let lastScroll = -Infinity;
+
+      // Clouds hold still while the page scrolls, so scrolling gets the whole frame budget.
+      addEventListener("scroll", () => {
+        lastScroll = performance.now();
+      }, { passive: true });
 
       function tick(now) {
         if (reduceMotion.matches) {
           running = false;
           return;
         }
-        if (now - last >= 40) {
-          last = now;
-          draw(now / 1000);
+        const dt = prev ? Math.min(now - prev, 100) : 0;
+        prev = now;
+        if (now - lastScroll > 200) {
+          clock += dt / 1000;
+          if (now - last >= 50) {
+            last = now;
+            draw(clock);
+          }
         }
         requestAnimationFrame(tick);
       }
@@ -466,18 +480,19 @@
       function start() {
         if (running || reduceMotion.matches) return;
         running = true;
+        prev = 0;
         requestAnimationFrame(tick);
       }
 
       resize();
-      draw(performance.now() / 1000);
+      draw(clock);
       bg.classList.add("is-live");
       start();
 
       reduceMotion.addEventListener("change", start);
       addEventListener("resize", () => {
         resize();
-        draw(performance.now() / 1000);
+        draw(clock);
       });
     })();
   </script>
