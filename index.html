@@ -53,16 +53,12 @@
       pointer-events: none;
       z-index: 0;
       contain: strict;
-    }
-
-    .bg-glow {
-      position: absolute;
-      inset: -20%;
       background:
-        radial-gradient(ellipse 45% 35% at 70% 30%, #204281, transparent 70%),
-        radial-gradient(ellipse 40% 45% at 20% 75%, #19366e, transparent 70%),
-        radial-gradient(ellipse 35% 30% at 85% 85%, #173165, transparent 70%);
-      animation: glow-drift 24.5s ease-in-out infinite alternate;
+        linear-gradient(180deg, rgba(10, 21, 46, 0.55), rgba(10, 21, 46, 0.35) 50%, rgba(10, 21, 46, 0.65)),
+        radial-gradient(ellipse 63% 49% at 78% 22%, #204281, transparent 70%),
+        radial-gradient(ellipse 56% 63% at 8% 85%, #19366e, transparent 70%),
+        radial-gradient(ellipse 49% 42% at 99% 99%, #173165, transparent 70%),
+        var(--bg);
     }
 
     /* Clouds seen through a dot grid give the halftone look. */
@@ -81,7 +77,7 @@
         radial-gradient(ellipse 35% 40% at 18% 68%, #79a6e2, transparent 65%),
         radial-gradient(ellipse 30% 25% at 40% 10%, #4379c9, transparent 70%),
         radial-gradient(ellipse 30% 30% at 88% 80%, #5f95dd, transparent 70%);
-      opacity: 0.7;
+      opacity: 0.45;
       animation: dots-drift 17s ease-in-out infinite alternate;
     }
 
@@ -105,12 +101,6 @@
       opacity: 0.9;
     }
 
-    .bg-veil {
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(180deg, rgba(10, 21, 46, 0.55), rgba(10, 21, 46, 0.35) 50%, rgba(10, 21, 46, 0.65));
-    }
-
     .sparkle {
       position: absolute;
       fill: var(--sparkle-fill);
@@ -124,16 +114,6 @@
       position: absolute;
       width: 0;
       height: 0;
-    }
-
-    @keyframes glow-drift {
-      from {
-        transform: translate(-4%, 3%) scale(1.05);
-      }
-
-      to {
-        transform: translate(4%, -3%) scale(1.15);
-      }
     }
 
     @keyframes dots-drift {
@@ -160,7 +140,6 @@
     }
 
     @media (prefers-reduced-motion: reduce) {
-      .bg-glow,
       .bg-dots,
       .sparkle {
         animation: none;
@@ -274,11 +253,9 @@
         <path d="M12 1c.9 5.8 4.2 9.1 11 11-6.8 1.9-10.1 5.2-11 11-.9-5.8-4.2-9.1-11-11 6.8-1.9 10.1-5.2 11-11z"/>
       </symbol>
     </svg>
-    <div class="bg-glow"></div>
     <div class="bg-dots halftone"></div>
     <canvas class="bg-clouds"></canvas>
     <canvas class="bg-cloud-dots halftone"></canvas>
-    <div class="bg-veil"></div>
     <svg class="sparkle" viewBox="0 0 24 24" style="left:5%;top:14%;width:14px;height:14px;--delay:0s;--duration:6s"><use href="#sparkle"/></svg>
     <svg class="sparkle" viewBox="0 0 24 24" style="left:18%;top:6%;width:10px;height:10px;--delay:-1.2s;--duration:7s"><use href="#sparkle"/></svg>
     <svg class="sparkle" viewBox="0 0 24 24" style="left:48%;top:4%;width:9px;height:9px;--delay:-4.8s;--duration:8s"><use href="#sparkle"/></svg>
@@ -412,6 +389,7 @@
       let cols = 0;
       let rows = 0;
       let image = null;
+      let shade = null;
 
       function resize() {
         const w = Math.max(1, bg.clientWidth);
@@ -423,6 +401,11 @@
         cols = soft.width = dots.width = nextCols;
         rows = soft.height = dots.height = nextRows;
         image = softCtx.createImageData(cols, rows);
+        // Matches the old veil (55% / 35% / 65% darker at top / middle / bottom) without its own layer.
+        shade = Float32Array.from({ length: rows }, (_, j) => {
+          const y = j / (rows - 1);
+          return 1 - (y < 0.5 ? 0.55 - 0.4 * y : 0.35 + 0.6 * (y - 0.5));
+        });
       }
 
       function draw(t) {
@@ -430,6 +413,7 @@
         let k = 0;
         for (let j = 0; j < rows; j++) {
           const y = j * UNIT;
+          const rowShade = shade[j];
           for (let i = 0; i < cols; i++) {
             const x = i * UNIT;
             const n =
@@ -440,7 +424,7 @@
             data[k++] = 22 + 64 * d;
             data[k++] = 50 + 81 * d;
             data[k++] = 108 + 95 * d;
-            data[k++] = 255 * d;
+            data[k++] = 255 * d * rowShade;
           }
         }
         softCtx.putImageData(image, 0, 0);
